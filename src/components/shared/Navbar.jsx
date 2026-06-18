@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -14,6 +15,7 @@ import {
   Lock,
   ChevronDown,
   House,
+  Menu,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -24,6 +26,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -35,12 +44,14 @@ export default function Navbar() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
   const user = session?.user;
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (href) => pathname === href;
 
-  const navLink = (href, label, icon) => (
+  const navLink = (href, label, icon, onClick) => (
     <Link
       href={href}
+      onClick={onClick}
       className={cn(
         "flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg transition-all duration-200",
         isActive(href)
@@ -82,7 +93,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* ── Nav Links */}
+          {/* ── Nav Links (desktop, md and up) */}
           <nav className="hidden md:flex items-center gap-0.5">
             {navLink("/", "Home", <House className="h-3.5 w-3.5" />)}
             {navLink(
@@ -209,6 +220,55 @@ export default function Navbar() {
                 </Button>
               </div>
             )}
+
+            {/* ── Mobile menu trigger (below md only) */}
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <button
+                  className="md:hidden flex items-center justify-center h-9 w-9 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="!w-56 bg-[#0c0c18] border-white/10 text-white"
+              >
+                <SheetHeader>
+                  <SheetTitle className="text-white text-left">
+                    Life<span className="text-violet-400">Vault</span>
+                  </SheetTitle>
+                </SheetHeader>
+                <nav className="mt-6 flex flex-col gap-1 px-1">
+                  {navLink("/", "Home", <House className="h-4 w-4" />, () =>
+                    setMobileOpen(false),
+                  )}
+                  {navLink(
+                    "/lessons",
+                    "Lessons",
+                    <BookOpen className="h-4 w-4" />,
+                    () => setMobileOpen(false),
+                  )}
+                  {user && (
+                    <>
+                      {navLink(
+                        "/dashboard/add-lesson",
+                        "Add Lesson",
+                        <PlusCircle className="h-4 w-4" />,
+                        () => setMobileOpen(false),
+                      )}
+                      {navLink(
+                        "/dashboard/my-lessons",
+                        "My Lessons",
+                        <Library className="h-4 w-4" />,
+                        () => setMobileOpen(false),
+                      )}
+                    </>
+                  )}
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>

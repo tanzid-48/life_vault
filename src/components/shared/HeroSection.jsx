@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/carousel";
 import { Star, ArrowRight, PenLine, TrendingUp } from "lucide-react";
 
-// ── Floating avatar bubbles
+// ── Floating avatar bubbles 
 const COLORS = [
   "from-violet-500 to-purple-600",
   "from-blue-500 to-cyan-500",
@@ -70,14 +70,12 @@ export default function HeroSection() {
   useEffect(() => {
     if (!api) return;
 
-    const onSelect = () => {
-      setCurrent(api.selectedScrollSnap());
-    };
+    const carouselApi = api;
+    const onSelect = () => setCurrent(carouselApi.selectedScrollSnap());
 
-    api.on("select", onSelect);
-    return () => {
-      api.off("select", onSelect);
-    };
+    onSelect();
+    carouselApi.on("select", onSelect);
+    return () => carouselApi.off("select", onSelect);
   }, [api]);
 
   return (
@@ -102,7 +100,7 @@ export default function HeroSection() {
               return (
                 <CarouselItem key={slide.badge}>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-                    {/* ── Left: Text  */}
+                    {/* ── Left: Text */}
                     <div>
                       {/* Badge */}
                       <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 mb-8 backdrop-blur-sm">
@@ -113,7 +111,7 @@ export default function HeroSection() {
                       </div>
 
                       {/* Headline */}
-                      <h1 className="text-4xl sm:text-[3.00rem] font-black text-white leading-[1.08] tracking-tight mb-6">
+                      <h1 className="text-5xl sm:text-[3.00 rem] font-black text-white leading-[1.08] tracking-tight mb-6">
                         {slide.heading[0]}
                         <br />
                         {slide.heading[1]}
@@ -148,9 +146,9 @@ export default function HeroSection() {
                     </div>
 
                     {/* ── Right: Image card  */}
-                    <div className="relative hidden lg:flex items-center justify-center">
+                    <div className="relative flex items-center justify-center mt-6 lg:mt-0">
                       {/* Main card */}
-                      <div className="relative w-[440px] h-[300px] rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/60">
+                      <div className="relative w-full max-w-[440px] h-[220px] sm:h-[260px] lg:h-[300px] rounded-2xl overflow-hidden border border-white/10 shadow-2xl shadow-black/60">
                         <Image
                           src={slide.image}
                           alt={slide.overlayLabel}
@@ -170,7 +168,7 @@ export default function HeroSection() {
                       </div>
 
                       {/* Floating: metric badge */}
-                      <div className="absolute -top-5 -left-6 flex items-center gap-2.5 rounded-2xl bg-white/8 backdrop-blur-lg border border-white/12 px-4 py-3 shadow-xl">
+                      <div className="hidden sm:flex absolute -top-5 -left-6 items-center gap-2.5 rounded-2xl bg-white/8 backdrop-blur-lg border border-white/12 px-4 py-3 shadow-xl">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-500/30">
                           <Star className="h-4 w-4 text-violet-300 fill-violet-300" />
                         </div>
@@ -185,7 +183,7 @@ export default function HeroSection() {
                       </div>
 
                       {/* Floating: Community badge */}
-                      <div className="absolute -bottom-5 -right-4 flex items-center gap-3 rounded-2xl bg-white/8 backdrop-blur-lg border border-white/12 px-4 py-3 shadow-xl">
+                      <div className="hidden sm:flex absolute -bottom-5 -right-4 items-center gap-3 rounded-2xl bg-white/8 backdrop-blur-lg border border-white/12 px-4 py-3 shadow-xl">
                         <div className="flex -space-x-2">
                           {COLORS.map((g, i) => (
                             <div
