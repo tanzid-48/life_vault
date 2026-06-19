@@ -3,24 +3,34 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { signIn } from "@/lib/auth-client";
+import { signUp, signIn } from "@/lib/auth-client";
 import { toast } from "sonner";
 import {
   BookOpen,
   Eye,
   EyeOff,
   Loader2,
-  LogIn,
+  Sparkles,
   Mail,
   Lock,
+  User,
+  ImageIcon,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
-
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
-// ── Input Field — outside component ──
+// Password strength rules
+const RULES = [
+  { label: "At least 8 characters", test: (p) => p.length >= 8 },
+  { label: "One uppercase letter", test: (p) => /[A-Z]/.test(p) },
+  { label: "One lowercase letter", test: (p) => /[a-z]/.test(p) },
+];
+
+// ── Input Field ──
 function InputField({
   id,
   label,
@@ -33,6 +43,7 @@ function InputField({
   error,
   showPass,
   onTogglePass,
+  optional,
 }) {
   return (
     <div className="space-y-1.5">
@@ -41,9 +52,13 @@ function InputField({
         className="text-xs font-semibold uppercase tracking-wider text-slate-500"
       >
         {label}
+        {optional && (
+          <span className="ml-1.5 text-[10px] font-medium text-slate-400 normal-case tracking-normal">
+            (optional)
+          </span>
+        )}
       </Label>
       <div className="relative group">
-        {/* Left icon */}
         <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors">
           <Icon className="h-4 w-4" />
         </div>
@@ -55,7 +70,15 @@ function InputField({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          autoComplete={fieldKey === "password" ? "current-password" : "email"}
+          autoComplete={
+            fieldKey === "password"
+              ? "new-password"
+              : fieldKey === "email"
+                ? "email"
+                : fieldKey === "name"
+                  ? "name"
+                  : "off"
+          }
           className={cn(
             "w-full h-12 rounded-xl border pl-10 pr-4 text-sm outline-none transition-all duration-200",
             "bg-slate-50 text-slate-900 placeholder:text-slate-400",
@@ -67,7 +90,6 @@ function InputField({
               : "border-slate-200",
           )}
         />
-        {/* Password toggle */}
         {fieldKey === "password" && (
           <button
             type="button"
@@ -89,6 +111,53 @@ function InputField({
           {error}
         </p>
       )}
+    </div>
+  );
+}
+
+// ── Password Strength ──
+function PasswordStrength({ password }) {
+  if (!password) return null;
+  const passed = RULES.filter((r) => r.test(password)).length;
+  const colors = ["bg-red-400", "bg-amber-400", "bg-emerald-400"];
+
+  return (
+    <div className="space-y-2 pt-1">
+      {/* Bar */}
+      <div className="flex gap-1">
+        {RULES.map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "h-1 flex-1 rounded-full transition-all duration-300",
+              i < passed ? colors[passed - 1] : "bg-slate-200",
+            )}
+          />
+        ))}
+      </div>
+      {/* Rules */}
+      <div className="space-y-1">
+        {RULES.map((rule, i) => {
+          const ok = rule.test(password);
+          return (
+            <div key={i} className="flex items-center gap-1.5">
+              {ok ? (
+                <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />
+              ) : (
+                <XCircle className="h-3 w-3 text-slate-300 shrink-0" />
+              )}
+              <span
+                className={cn(
+                  "text-[11px]",
+                  ok ? "text-emerald-600" : "text-slate-400",
+                )}
+              >
+                {rule.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -115,7 +184,7 @@ const GoogleIcon = () => (
   </svg>
 );
 
-export default function SignInForm() {
+export default function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
@@ -123,15 +192,22 @@ export default function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    photoURL: "",
+    password: "",
+  });
   const [errors, setErrors] = useState({});
 
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
 
   const validate = () => {
     const e = {};
+    if (!form.name.trim()) e.name = "Full name is required";
     if (!isValidEmail(form.email)) e.email = "Enter a valid email address";
-    if (!form.password) e.password = "Password is required";
+    const failedRule = RULES.find((r) => !r.test(form.password));
+    if (failedRule) e.password = failedRule.label;
     setErrors(e);
     const first = Object.values(e)[0];
     if (first) toast.error(first);
@@ -143,16 +219,19 @@ export default function SignInForm() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const { error } = await signIn.email({
+      const { error } = await signUp.email({
+        name: form.name.trim(),
         email: form.email,
         password: form.password,
+        image: form.photoURL || undefined,
+        role: "user", // ← default role
       });
       if (error) throw new Error(error.message);
-      toast.success("Welcome back! 🎉");
-      router.push(redirectTo);
+      toast.success("Account created! Welcome to LifeVault 🎉");
+      router.push(`/signin?redirect=${redirectTo}`);
       router.refresh();
     } catch (err) {
-      toast.error(err.message || "Invalid email or password");
+      toast.error(err.message || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -168,22 +247,23 @@ export default function SignInForm() {
     }
   }
 
+  const passStrength = RULES.filter((r) => r.test(form.password)).length;
+
   return (
-    <div className="min-h-screen bg-[#080810] from-slate-50 via-violet-50/40 to-indigo-50/30 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#080810] flex items-center justify-center p-4 py-10 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-violet-100/60 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-indigo-100/60 blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-violet-600/20 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-fuchsia-600/15 blur-3xl" />
       </div>
 
       <div className="w-full max-w-md relative z-10">
         {/* Card */}
-        <div className="bg-white rounded-3xl shadow-2xl shadow-slate-200/80 border border-slate-100/80 overflow-hidden">
-          {/* Top gradient bar */}
+        <div className="bg-white rounded-3xl shadow-2xl shadow-black/40 border border-white/10 overflow-hidden">
           <div className="h-1 w-full bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500" />
 
           <div className="p-8">
-            {/* ── Logo + Header ── */}
+            {/* ── Header ── */}
             <div className="text-center mb-8">
               <Link
                 href="/"
@@ -197,14 +277,14 @@ export default function SignInForm() {
                 </span>
               </Link>
               <h1 className="text-2xl font-bold text-slate-900">
-                Welcome back
+                Create your account
               </h1>
               <p className="text-sm text-slate-500 mt-1.5">
-                Sign in to continue your wisdom journey
+                Start preserving life&apos;s most important lessons
               </p>
             </div>
 
-            {/* ── Google Button ── */}
+            {/* ── Google ── */}
             <button
               type="button"
               onClick={handleGoogle}
@@ -238,6 +318,18 @@ export default function SignInForm() {
             {/* ── Form ── */}
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <InputField
+                id="name"
+                label="Full Name"
+                type="text"
+                placeholder="Your full name"
+                fieldKey="name"
+                icon={User}
+                value={form.name}
+                onChange={set("name")}
+                error={errors.name}
+              />
+
+              <InputField
                 id="email"
                 label="Email Address"
                 type="email"
@@ -248,24 +340,41 @@ export default function SignInForm() {
                 onChange={set("email")}
                 error={errors.email}
               />
+
               <InputField
-                id="password"
-                label="Password"
-                type="password"
-                placeholder="Your password"
-                fieldKey="password"
-                icon={Lock}
-                value={form.password}
-                onChange={set("password")}
-                error={errors.password}
-                showPass={showPass}
-                onTogglePass={() => setShowPass((p) => !p)}
+                id="photoURL"
+                label="Photo URL"
+                type="url"
+                placeholder="https://example.com/photo.jpg"
+                fieldKey="photoURL"
+                icon={ImageIcon}
+                value={form.photoURL}
+                onChange={set("photoURL")}
+                error={errors.photoURL}
+                optional
               />
+
+              <div className="space-y-2">
+                <InputField
+                  id="password"
+                  label="Password"
+                  type="password"
+                  placeholder="Min 8 chars, uppercase & lowercase"
+                  fieldKey="password"
+                  icon={Lock}
+                  value={form.password}
+                  onChange={set("password")}
+                  error={errors.password}
+                  showPass={showPass}
+                  onTogglePass={() => setShowPass((p) => !p)}
+                />
+                <PasswordStrength password={form.password} />
+              </div>
 
               {/* Submit */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || passStrength < 3}
                 className={cn(
                   "w-full h-12 rounded-xl mt-2",
                   "bg-gradient-to-r from-violet-600 to-purple-600",
@@ -274,41 +383,43 @@ export default function SignInForm() {
                   "flex items-center justify-center gap-2",
                   "shadow-lg shadow-violet-200 hover:shadow-violet-300",
                   "active:scale-[0.98] transition-all duration-150",
-                  "disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100",
+                  "disabled:opacity-60 disabled:cursor-not-allowed disabled:scale-100",
                 )}
               >
                 {loading ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Signing in...
+                    <Loader2 className="h-4 w-4 animate-spin" /> Creating
+                    account...
                   </>
                 ) : (
                   <>
-                    <LogIn className="h-4 w-4" /> Sign In
+                    <Sparkles className="h-4 w-4" /> Create Account
                   </>
                 )}
               </button>
             </form>
 
-            {/* ── Footer ── */}
             <p className="text-center text-sm text-slate-500 mt-6">
-              Don&apos;t have an account?{" "}
+              Already have an account?{" "}
               <Link
-                href={`/signup?redirect=${redirectTo}`}
+                href={`/signin?redirect=${redirectTo}`}
                 className="text-violet-600 hover:text-violet-700 font-semibold hover:underline transition-colors"
               >
-                Create one
+                Sign in
               </Link>
             </p>
           </div>
         </div>
 
-        {/* Bottom text */}
+        {/* Bottom */}
         <p className="text-center text-xs text-slate-400 mt-4">
-          Protected by{" "}
-          <span className="font-semibold text-slate-500">LifeVault</span>
-          {" · "}
-          <Link href="/privacy" className="hover:text-slate-600 underline">
-            Privacy
+          By creating an account, you agree to our{" "}
+          <Link href="/terms" className="underline hover:text-slate-300">
+            Terms
+          </Link>
+          {" & "}
+          <Link href="/privacy" className="underline hover:text-slate-300">
+            Privacy Policy
           </Link>
         </p>
       </div>
