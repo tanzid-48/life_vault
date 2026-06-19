@@ -75,7 +75,7 @@ export default function SignupPage() {
       if (error) throw new Error(error.message);
 
       toast.success("Account created! Welcome to LifeVault 🎉");
-      router.push("/dashboard/user");
+      router.push("/signin");
     } catch (err) {
       console.error(" Signup failed:", err);
       toast.error(err.message || "Signup failed");
@@ -90,7 +90,7 @@ export default function SignupPage() {
     try {
       await signIn.social({
         provider: "google",
-        callbackURL: "/dashboard/user",
+        callbackURL: "/",
       });
     } catch (err) {
       console.error(" Google sign-in failed:", err);
@@ -138,7 +138,7 @@ export default function SignupPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-slate-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-white/10 from-slate-50 via-violet-50/30 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">

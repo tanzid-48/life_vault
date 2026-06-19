@@ -50,7 +50,7 @@ export default function SigninPage() {
       if (error) throw new Error(error.message);
 
       toast.success("Welcome back! 🎉");
-      router.push("/dashboard/user");
+      router.push("/");
     } catch (err) {
       console.error("❌ Signin failed:", err);
       toast.error(err.message || "Invalid email or password");
@@ -65,7 +65,7 @@ export default function SigninPage() {
     try {
       await signIn.social({
         provider: "google",
-        callbackURL: "/dashboard/user",
+        callbackURL: "/",
       });
     } catch (err) {
       console.error("❌ Google sign-in failed:", err);
