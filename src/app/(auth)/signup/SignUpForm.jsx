@@ -228,7 +228,7 @@ export default function SignUpForm() {
       });
       if (error) throw new Error(error.message);
       toast.success("Account created! Welcome to LifeVault 🎉");
-      router.push(`/signin?redirect=${redirectTo}`);
+      router.push("/signin");
       router.refresh();
     } catch (err) {
       toast.error(err.message || "Signup failed. Please try again.");

@@ -92,12 +92,12 @@ export default function Navbar() {
 
   const userLinks = [
     {
-      href: "/dashboard/add-lesson",
+      href: "/dashboard/user/add-lesson",
       label: "Add Lesson",
       icon: <PlusCircle className="h-3.5 w-3.5" />,
     },
     {
-      href: "/dashboard/my-lessons",
+      href: "/dashboard/user/my-lessons",
       label: "My Lessons",
       icon: <Library className="h-3.5 w-3.5" />,
     },
