@@ -147,7 +147,6 @@ export default function Navbar() {
                   </Link>
                 )}
 
-                {/* Avatar dropdown — name সরিয়ে দিলাম, শুধু avatar */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-1.5 rounded-full p-0.5 hover:ring-2 hover:ring-violet-500/40 transition-all outline-none">
@@ -214,7 +213,7 @@ export default function Navbar() {
                         href={
                           user.role === "admin"
                             ? "/dashboard/admin/profile"
-                            : "/dashboard/profile"
+                            : "/dashboard/user/profile"
                         }
                         className="flex items-center gap-2"
                       >
@@ -222,7 +221,6 @@ export default function Navbar() {
                       </Link>
                     </DropdownMenuItem>
 
-                    {/* Upgrade — dropdown এর ভেতরেও দেখাবে free user এর জন্য */}
                     {user.isPremium !== true && (
                       <>
                         <DropdownMenuSeparator className="bg-white/10" />
