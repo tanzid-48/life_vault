@@ -222,17 +222,19 @@ export default function PricingPage() {
             </div>
 
             {/* CTA */}
-            <Link
-              href="/signup?plan=premium"
-              className="relative w-full h-12 rounded-xl flex items-center justify-center gap-2 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
-              style={{
-                background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-                boxShadow: "0 4px 24px rgba(139,92,246,0.4)",
-              }}
-            >
-              <Star className="w-4 h-4 text-amber-400" />
-              Upgrade to Premium
-            </Link>
+            <form action="/api/checkout_sessions" method="POST">
+              <button
+                type="submit"
+                role="link"
+                className="flex items-center gap-2 px-8 h-12 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                style={{
+                  background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                  boxShadow: "0 4px 24px rgba(139,92,246,0.4)",
+                }}
+              >
+                ⭐ Upgrade to Premium — ৳1500
+              </button>
+            </form>
           </div>
         </div>
 
@@ -321,16 +323,19 @@ export default function PricingPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-center">
-            <Link
-              href="/signup?plan=premium"
-              className="flex items-center gap-2 px-8 h-12 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
-              style={{
-                background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-                boxShadow: "0 4px 24px rgba(139,92,246,0.4)",
-              }}
-            >
-              <Star className="w-4 h-4 text-amber-400" /> Get Premium
-            </Link>
+            <form action="/api/checkout_sessions" method="POST">
+              <button
+                type="submit"
+                role="link"
+                className="flex items-center gap-2 px-8 h-12 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                style={{
+                  background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                  boxShadow: "0 4px 24px rgba(139,92,246,0.4)",
+                }}
+              >
+                ⭐ Upgrade to Premium — ৳1500
+              </button>
+            </form>
             <Link
               href="/lessons"
               className="flex items-center gap-2 px-8 h-12 rounded-xl text-sm font-semibold transition-all hover:bg-white/10"
