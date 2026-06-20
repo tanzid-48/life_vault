@@ -224,11 +224,11 @@ export default function SignUpForm() {
         email: form.email,
         password: form.password,
         image: form.photoURL || undefined,
-        role: "user", 
+        role: "user", // ← default role
       });
       if (error) throw new Error(error.message);
       toast.success("Account created! Welcome to LifeVault 🎉");
-      router.push("/signin");
+      router.push(`/signin?redirect=${redirectTo}`);
       router.refresh();
     } catch (err) {
       toast.error(err.message || "Signup failed. Please try again.");
