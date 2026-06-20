@@ -224,7 +224,7 @@ export default function SignUpForm() {
         email: form.email,
         password: form.password,
         image: form.photoURL || undefined,
-        role: "user", // ← default role
+        role: "user", 
       });
       if (error) throw new Error(error.message);
       toast.success("Account created! Welcome to LifeVault 🎉");
