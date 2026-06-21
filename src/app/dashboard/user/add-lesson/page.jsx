@@ -46,6 +46,7 @@ export default function AddLessonPage() {
     category: "",
     emotionalTone: "",
     accessLevel: "free",
+    visibility: "public",
     imageUrl: "",
   });
 
@@ -69,12 +70,8 @@ export default function AddLessonPage() {
     setLoading(true);
     try {
       const result = await createLesson({
-        title: form.title,
-        description: form.description,
-        category: form.category,
-        emotionalTone: form.emotionalTone,
-        accessLevel: form.accessLevel,
-        imageUrl: form.imageUrl || null,
+        ...form,
+        isPublic: form.visibility === "public",
       });
       if (!result.success) {
         toast.error(result.message || "Failed");
@@ -168,7 +165,37 @@ export default function AddLessonPage() {
             </div>
           ))}
         </div>
-
+        {/* Visibility */}
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold text-white">Visibility</Label>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { value: "public", label: "🌍 Public", desc: "Everyone can see" },
+              {
+                value: "private",
+                label: "🔒 Private",
+                desc: "Only you can see",
+              },
+            ].map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => set("visibility", opt.value)}
+                className={cn(
+                  "w-full rounded-xl border-2 py-3 px-4 text-sm font-bold transition-all text-left",
+                  form.visibility === opt.value
+                    ? "border-violet-500 bg-violet-950/30 text-violet-300"
+                    : "border-white/10 bg-white/5 text-slate-400 hover:border-white/20",
+                )}
+              >
+                <div>{opt.label}</div>
+                <div className="text-xs font-normal mt-0.5 opacity-60">
+                  {opt.desc}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
         {/* Access Level */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold text-white">

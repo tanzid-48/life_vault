@@ -1,5 +1,7 @@
 "use server";
-import { getAuthHeaders, getSession } from "@/lib/auth-session";
+
+import { getAuthHeaders, getSession } from "../auth-session";
+
 
 const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL;
 
