@@ -26,7 +26,7 @@ export const getLessonsPaginated = async ({
   }
 };
 
-// All lessons (no pagination)
+
 export const getAllLessons = async (query = {}) => {
   try {
     const params = new URLSearchParams(query);
