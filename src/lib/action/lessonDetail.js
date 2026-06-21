@@ -4,17 +4,27 @@ import { getAuthHeaders } from "@/lib/auth-session";
 
 const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL;
 
-// ── Public 
-
-export const getLessonById = async (id) => {
+export async function getLessonById(id) {
   try {
-    const res = await fetch(`${baseUrl}/lessons/${id}`, { cache: "no-store" });
+   
+    const headers = await getAuthHeaders();
+
+    const res = await fetch(`${baseUrl}/lessons/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...headers, 
+      },
+      cache: "no-store",
+    });
+
     if (!res.ok) return null;
-    return res.json();
-  } catch {
+    return await res.json();
+  } catch (error) {
+    console.error("Fetch Error:", error);
     return null;
   }
-};
+}
 
 export const getLessonsByFilter = async ({
   category,
@@ -52,7 +62,7 @@ export const getAuthorLessonCount = async (userId) => {
   }
 };
 
-// ── Protected 
+// ── Protected
 
 export const toggleLike = async (lessonId) => {
   try {
