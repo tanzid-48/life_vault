@@ -31,7 +31,7 @@ export default async function MyLessonsPage() {
           </p>
         </div>
         <Link
-          href="/dashboard/add-lesson"
+          href="/dashboard/user/add-lesson"
           className="flex items-center gap-2 px-5 h-10 rounded-xl text-sm font-bold text-white hover:opacity-90 transition-all"
           style={{
             background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
@@ -80,7 +80,7 @@ export default async function MyLessonsPage() {
             Share your first life lesson with the community
           </p>
           <Link
-            href="/dashboard/add-lesson"
+            href="/dashboard/user/add-lesson"
             className="px-5 h-9 rounded-xl text-xs font-bold text-white flex items-center gap-2"
             style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
           >

@@ -78,7 +78,7 @@ export default function AddLessonPage() {
         return;
       }
       toast.success("Lesson published! 🎉");
-      router.push("/dashboard/my-lessons");
+      router.push("/dashboard/user/my-lessons");
     } catch (err) {
       toast.error(err.message || "Failed to publish");
     } finally {

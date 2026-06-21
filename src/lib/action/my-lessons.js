@@ -14,10 +14,21 @@ export async function updateLessonField(lessonId, body) {
 }
 
 export async function deleteLesson(lessonId) {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${baseUrl}/lessons/${lessonId}`, {
-    method: "DELETE",
-    headers,
-  });
-  return res;
+  try {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${baseUrl}/lessons/${lessonId}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    const d = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return { success: false, message: d.message || "Failed to delete" };
+    }
+
+    return { success: true, ...d };
+  } catch (error) {
+    return { success: false, message: "Server unreachable" };
+  }
 }

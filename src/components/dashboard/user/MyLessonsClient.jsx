@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -101,9 +101,32 @@ function DeleteModal({ lesson, onConfirm, onCancel, loading }) {
 }
 
 // ── Quick Edit Dropdown ──
+
 function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [position, setPosition] = useState({});
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    if (open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + window.scrollY + 5,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, [open]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (buttonRef.current && !buttonRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   const handleSelect = async (newVal) => {
     if (newVal === value) {
@@ -111,7 +134,6 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
       return;
     }
 
-    // free user cannot set premium access
     if (field === "accessLevel" && newVal === "premium" && !isPremium) {
       toast.error("Upgrade to Premium to create premium lessons");
       setOpen(false);
@@ -125,7 +147,6 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
         field === "visibility"
           ? { isPublic: newVal === "public" }
           : { accessLevel: newVal };
-
       const res = await updateLessonField(lessonId, body);
       if (res.ok) {
         onChange(lessonId, field, newVal);
@@ -147,7 +168,11 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen((p) => !p)}
+        ref={buttonRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((p) => !p);
+        }}
         disabled={loading}
         className="flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-[11px] font-semibold transition-all disabled:opacity-50"
         style={{
@@ -163,8 +188,10 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
 
       {open && (
         <div
-          className="absolute top-full left-0 mt-1 z-30 rounded-xl overflow-hidden shadow-xl min-w-[130px]"
+          className="fixed z-[9999] rounded-xl overflow-hidden shadow-xl min-w-[130px]"
           style={{
+            top: position.top,
+            left: position.left,
             backgroundColor: "#13131f",
             border: "1px solid rgba(255,255,255,0.1)",
           }}
@@ -241,7 +268,7 @@ function timeAgo(dateStr) {
 export default function MyLessonsClient({ initialLessons, isPremium }) {
   const router = useRouter();
   const [lessons, setLessons] = useState(initialLessons);
-  const [deleteTarget, setDeleteTarget] = useState(null); 
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Optimistic update after quick-select
@@ -261,22 +288,22 @@ export default function MyLessonsClient({ initialLessons, isPremium }) {
   // Delete
   const handleDelete = async () => {
     if (!deleteTarget) return;
+
     const id = deleteTarget._id?.$oid || deleteTarget._id;
     setDeleteLoading(true);
-    try {
-      const res = await deleteLesson(id);
-      if (res.ok) {
-        setLessons((prev) => prev.filter((l) => (l._id?.$oid || l._id) !== id));
-        toast.success("Lesson deleted");
-        setDeleteTarget(null);
-      } else {
-        toast.error("Failed to delete");
-      }
-    } catch {
-      toast.error("Something went wrong");
-    } finally {
-      setDeleteLoading(false);
+
+    const result = await deleteLesson(id);
+
+    if (result.success) {
+      setLessons((prev) => prev.filter((l) => (l._id?.$oid || l._id) !== id));
+      router.refresh();
+      toast.success("Lesson deleted");
+      setDeleteTarget(null);
+    } else {
+      toast.error(result.message);
     }
+
+    setDeleteLoading(false);
   };
 
   return (
