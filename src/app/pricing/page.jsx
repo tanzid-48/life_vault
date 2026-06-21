@@ -1,4 +1,13 @@
-import { Check, X, Star, Zap, Shield, Sparkles } from "lucide-react";
+import { getSession } from "@/lib/auth-session";
+import {
+  Check,
+  X,
+  Star,
+  Zap,
+  Shield,
+  Sparkles,
+  BadgeCheck,
+} from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
@@ -74,7 +83,11 @@ function CompareCell({ value }) {
   return <span className="text-xs font-semibold text-violet-300">{value}</span>;
 }
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const session = await getSession();
+  const user = session?.user ?? null;
+  const isPremium = user?.isPremium === true;
+
   return (
     <div className="min-h-screen bg-[#080810] py-16 px-4">
       <div className="max-w-5xl mx-auto flex flex-col gap-16">
@@ -93,11 +106,12 @@ export default function PricingPage() {
             </span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-            Simple, honest pricing
+            {isPremium ? "You're on Premium" : "Simple, honest pricing"}
           </h1>
           <p className="text-base text-white/40 max-w-md mx-auto leading-relaxed">
-            Start free forever. Upgrade when you&apos;re ready to unlock the
-            full LifeVault experience.
+            {isPremium
+              ? "Thanks for supporting LifeVault — every premium feature is unlocked on your account."
+              : "Start free forever. Upgrade when you're ready to unlock the full LifeVault experience."}
           </p>
         </div>
 
@@ -143,18 +157,42 @@ export default function PricingPage() {
               ))}
             </div>
 
-            {/* CTA */}
-            <Link
-              href="/signup"
-              className="w-full h-12 rounded-xl flex items-center justify-center text-sm font-bold transition-all hover:bg-white/10 active:scale-95"
-              style={{
-                backgroundColor: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "rgba(255,255,255,0.6)",
-              }}
-            >
-              Get Started Free
-            </Link>
+            {/* CTA — তিনটা state: guest / free user / premium user */}
+            {!user ? (
+              <Link
+                href="/signup"
+                className="w-full h-12 rounded-xl flex items-center justify-center text-sm font-bold transition-all hover:bg-white/10 active:scale-95"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  color: "rgba(255,255,255,0.6)",
+                }}
+              >
+                Get Started Free
+              </Link>
+            ) : isPremium ? (
+              <div
+                className="w-full h-12 rounded-xl flex items-center justify-center text-sm font-semibold"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.02)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  color: "rgba(255,255,255,0.3)",
+                }}
+              >
+                Included in Premium
+              </div>
+            ) : (
+              <div
+                className="w-full h-12 rounded-xl flex items-center justify-center text-sm font-bold"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  color: "rgba(255,255,255,0.6)",
+                }}
+              >
+                ✓ Your Current Plan
+              </div>
+            )}
           </div>
 
           {/* Premium Plan */}
@@ -166,17 +204,29 @@ export default function PricingPage() {
               border: "1px solid rgba(139,92,246,0.3)",
             }}
           >
-            {/* Popular badge */}
+            {/* Popular / Active badge */}
             <div className="absolute top-5 right-5">
-              <span
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
-                style={{
-                  background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
-                  color: "#000",
-                }}
-              >
-                <Star className="w-3 h-3" /> Popular
-              </span>
+              {isPremium ? (
+                <span
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                  style={{
+                    background: "linear-gradient(135deg, #34d399, #059669)",
+                    color: "#000",
+                  }}
+                >
+                  <BadgeCheck className="w-3 h-3" /> Active
+                </span>
+              ) : (
+                <span
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                  style={{
+                    background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                    color: "#000",
+                  }}
+                >
+                  <Star className="w-3 h-3" /> Popular
+                </span>
+              )}
             </div>
 
             {/* Glow */}
@@ -206,11 +256,13 @@ export default function PricingPage() {
                 </span>
               </div>
               <div className="flex items-end gap-2">
-                <span className="text-5xl font-black text-white">$9</span>
-                <span className="text-white/40 text-sm mb-2">/ month</span>
+                <span className="text-5xl font-black text-white">৳1500</span>
+                <span className="text-white/40 text-sm mb-2">/ lifetime</span>
               </div>
               <p className="text-sm text-white/50 mt-2">
-                Unlock the full power of LifeVault for serious learners.
+                {isPremium
+                  ? "You already have lifetime access — thank you!"
+                  : "Unlock the full power of LifeVault for serious learners."}
               </p>
             </div>
 
@@ -221,20 +273,44 @@ export default function PricingPage() {
               ))}
             </div>
 
-            {/* CTA */}
-            <form action="/api/checkout_sessions" method="POST">
-              <button
-                type="submit"
-                role="link"
-                className="flex items-center gap-2 px-8 h-12 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
+            {/* CTA — তিনটা state: guest / free user / premium user */}
+            {isPremium ? (
+              <div
+                className="flex items-center justify-center gap-2 px-8 h-12 rounded-xl text-sm font-bold"
+                style={{
+                  backgroundColor: "rgba(52,211,153,0.1)",
+                  color: "#34d399",
+                  border: "1px solid rgba(52,211,153,0.25)",
+                }}
+              >
+                <BadgeCheck className="w-4 h-4" /> You&apos;re Premium ⭐
+              </div>
+            ) : user ? (
+              <form action="/api/checkout_sessions" method="POST">
+                <button
+                  type="submit"
+                  role="link"
+                  className="w-full flex items-center justify-center gap-2 px-8 h-12 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                  style={{
+                    background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                    boxShadow: "0 4px 24px rgba(139,92,246,0.4)",
+                  }}
+                >
+                  ⭐ Upgrade to Premium — ৳1500
+                </button>
+              </form>
+            ) : (
+              <Link
+                href="/signin?redirect=/pricing"
+                className="w-full flex items-center justify-center gap-2 px-8 h-12 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
                 style={{
                   background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
                   boxShadow: "0 4px 24px rgba(139,92,246,0.4)",
                 }}
               >
-                ⭐ Upgrade to Premium — ৳1500
-              </button>
-            </form>
+                Sign in to Upgrade
+              </Link>
+            )}
           </div>
         </div>
 
@@ -294,7 +370,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* ── Bottom CTA ── */}
+        {/* ── Bottom CTA — premium হলে আলাদা message, কোনো checkout button নেই ── */}
         <div
           className="flex flex-col items-center gap-5 text-center py-8 rounded-3xl"
           style={{
@@ -306,36 +382,46 @@ export default function PricingPage() {
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
             style={{
-              background:
-                "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.1))",
-              border: "1px solid rgba(139,92,246,0.3)",
+              background: isPremium
+                ? "linear-gradient(135deg, rgba(52,211,153,0.2), rgba(5,150,105,0.1))"
+                : "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(99,102,241,0.1))",
+              border: `1px solid ${isPremium ? "rgba(52,211,153,0.3)" : "rgba(139,92,246,0.3)"}`,
             }}
           >
-            <Sparkles className="w-6 h-6 text-violet-400" />
+            {isPremium ? (
+              <BadgeCheck className="w-6 h-6 text-emerald-400" />
+            ) : (
+              <Sparkles className="w-6 h-6 text-violet-400" />
+            )}
           </div>
           <div>
             <h3 className="text-xl font-bold text-white">
-              Ready to unlock your full potential?
+              {isPremium
+                ? "You're all set!"
+                : "Ready to unlock your full potential?"}
             </h3>
             <p className="text-sm text-white/40 mt-1.5 max-w-md">
-              Join thousands of learners preserving and sharing life&apos;s most
-              important lessons.
+              {isPremium
+                ? "Go write your next lesson, or explore premium content from other members."
+                : "Join thousands of learners preserving and sharing life's most important lessons."}
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-center">
-            <form action="/api/checkout_sessions" method="POST">
-              <button
-                type="submit"
-                role="link"
-                className="flex items-center gap-2 px-8 h-12 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
-                style={{
-                  background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
-                  boxShadow: "0 4px 24px rgba(139,92,246,0.4)",
-                }}
-              >
-                ⭐ Upgrade to Premium — ৳1500
-              </button>
-            </form>
+            {!isPremium && (
+              <form action="/api/checkout_sessions" method="POST">
+                <button
+                  type="submit"
+                  role="link"
+                  className="flex items-center gap-2 px-8 h-12 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
+                  style={{
+                    background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                    boxShadow: "0 4px 24px rgba(139,92,246,0.4)",
+                  }}
+                >
+                  ⭐ Upgrade to Premium — ৳1500
+                </button>
+              </form>
+            )}
             <Link
               href="/lessons"
               className="flex items-center gap-2 px-8 h-12 rounded-xl text-sm font-semibold transition-all hover:bg-white/10"
@@ -345,12 +431,14 @@ export default function PricingPage() {
                 color: "rgba(255,255,255,0.5)",
               }}
             >
-              Explore Free First
+              {isPremium ? "Browse Lessons" : "Explore Free First"}
             </Link>
           </div>
-          <p className="text-xs text-white/25">
-            No credit card required for free plan · Cancel anytime
-          </p>
+          {!isPremium && (
+            <p className="text-xs text-white/25">
+              One-time payment · Lifetime access
+            </p>
+          )}
         </div>
       </div>
     </div>
