@@ -23,3 +23,16 @@ export async function getTopContributors() {
     return [];
   }
 }
+
+// Most saved lessons
+export async function getMostSavedLessons() {
+  try {
+    const res = await fetch(`${base}/lessons/most-saved`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
