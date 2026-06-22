@@ -1,4 +1,4 @@
-import { getAuthHeaders } from "../auth-session";
+import { getAuthHeaders } from "@/lib/auth-session";
 
 const base = process.env.NEXT_PUBLIC_SERVER_URL;
 
