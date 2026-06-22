@@ -1,8 +1,9 @@
 import FeaturedLessons from "@/components/shared/FeaturedLessons";
 import HeroSection from "@/components/shared/HeroSection";
 import HowItWorks from "@/components/shared/HowItWorks";
+import TopContributors from "@/components/shared/TopContributors";
 import WhySection from "@/components/shared/WhySection";
-import { getFeaturedLessons } from "@/lib/api/home";
+import { getFeaturedLessons, getTopContributors } from "@/lib/api/home";
 import { getSession } from "@/lib/auth-session";
 
 export const metadata = {
@@ -16,6 +17,7 @@ export default async function Home() {
   const user = session?.user || null;
 
   const featured = await getFeaturedLessons();
+  const topContributors = await getTopContributors();
 
   return (
     <>
@@ -24,6 +26,7 @@ export default async function Home() {
         <WhySection />
         <FeaturedLessons lessons={featured} currentUser={user} />
         <HowItWorks />
+         <TopContributors contributors={topContributors}/>
       </main>
     </>
   );

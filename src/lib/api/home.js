@@ -10,3 +10,16 @@ export async function getFeaturedLessons() {
     return [];
   }
 }
+
+// Top contributors this week
+export async function getTopContributors() {
+  try {
+    const res = await fetch(`${base}/users/top-contributors`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}

@@ -36,7 +36,7 @@ const STEPS = [
 
 export default function HowItWorks() {
   return (
-    <section className="py-20 px-4">
+    <section className=" px-4">
       <div className="max-w-5xl mx-auto flex flex-col gap-14">
         {/* Header */}
         <motion.div
