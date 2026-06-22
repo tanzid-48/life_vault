@@ -87,7 +87,7 @@ export default function HeroSection() {
         <div className="absolute top-0   right-0    w-[200px] h-[200px] rounded-full bg-indigo-600/10 blur-[60px]" />
       </div>
 
-      <div className="relative mx-auto max-w-5xl px-6 lg:px-8 py-20 w-full">
+      <div className="relative mx-auto max-w-6xl px-6 lg:px-8 py-20 w-full">
         <Carousel
           setApi={setApi}
           opts={{ loop: true }}
