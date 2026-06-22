@@ -76,10 +76,11 @@ export default function LessonsFilterBar() {
         <select
           value={searchParams.get("category") || ""}
           onChange={(e) => updateParam("category", e.target.value)}
-          className="h-9 rounded-lg px-3 text-xs font-medium text-white/70 outline-none cursor-pointer"
+          className=" h-9 rounded-lg px-3 text-xs font-medium text-white/70 outline-none cursor-pointer"
           style={{
-            backgroundColor: "rgba(255,255,255,0.05)",
+            backgroundColor: "#13131f",
             border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.7)",
           }}
         >
           <option value="">All Categories</option>
@@ -95,8 +96,9 @@ export default function LessonsFilterBar() {
           onChange={(e) => updateParam("emotionalTone", e.target.value)}
           className="h-9 rounded-lg px-3 text-xs font-medium text-white/70 outline-none cursor-pointer"
           style={{
-            backgroundColor: "rgba(255,255,255,0.05)",
+            backgroundColor: "#13131f",
             border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.7)",
           }}
         >
           <option value="">All Tones</option>
@@ -111,9 +113,10 @@ export default function LessonsFilterBar() {
           value={searchParams.get("sort") || "newest"}
           onChange={(e) => updateParam("sort", e.target.value)}
           className="h-9 rounded-lg px-3 text-xs font-medium text-white/70 outline-none cursor-pointer ml-auto"
-          style={{
-            backgroundColor: "rgba(255,255,255,0.05)",
+         style={{
+            backgroundColor: "#13131f",
             border: "1px solid rgba(255,255,255,0.1)",
+            color: "rgba(255,255,255,0.7)",
           }}
         >
           {SORTS.map((s) => (
