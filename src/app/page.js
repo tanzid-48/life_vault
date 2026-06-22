@@ -1,6 +1,7 @@
 import FeaturedLessons from "@/components/shared/FeaturedLessons";
 import HeroSection from "@/components/shared/HeroSection";
 import HowItWorks from "@/components/shared/HowItWorks";
+import WhySection from "@/components/shared/WhySection";
 import { getFeaturedLessons } from "@/lib/api/home";
 import { getSession } from "@/lib/auth-session";
 
@@ -20,8 +21,9 @@ export default async function Home() {
     <>
       <main className="min-h-screen bg-[#080810]">
         <HeroSection />
-        <HowItWorks />
+        <WhySection />
         <FeaturedLessons lessons={featured} currentUser={user} />
+        <HowItWorks />
       </main>
     </>
   );
