@@ -94,7 +94,7 @@ function ConfirmModal({ title, desc, onConfirm, onCancel, loading }) {
 }
 
 export default function ManageLessonsClient({ initialLessons }) {
-    const router = useRouter();
+  const router = useRouter();
   const [lessons, setLessons] = useState(initialLessons);
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("All");
@@ -202,10 +202,12 @@ export default function ManageLessonsClient({ initialLessons }) {
           value={accFilter}
           onChange={(e) => setAccFilter(e.target.value)}
           className="h-11 px-3 rounded-xl text-sm text-white outline-none"
-          style={{
-            backgroundColor: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
+          style=
+              {{
+                backgroundColor: "#13131f",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: "rgba(255,255,255,0.7)",
+              }}
         >
           <option value="All">All Access</option>
           <option value="Free">Free</option>
@@ -327,22 +329,18 @@ export default function ManageLessonsClient({ initialLessons }) {
                   </div>
                 </div>
               </div>
-
               {/* Author */}
               <p className="text-xs text-white/45 truncate">
                 {lesson.userName || "—"}
               </p>
-
               {/* Category */}
               <p className="text-xs text-white/45 truncate">
                 {lesson.category}
               </p>
-
               {/* Views */}
               <div className="flex items-center gap-1 text-xs text-white/40">
                 <Eye className="w-3.5 h-3.5" /> {lesson.views || 0}
               </div>
-
               {/* Reports */}
               <div
                 className="flex items-center gap-1 text-xs"
@@ -358,16 +356,16 @@ export default function ManageLessonsClient({ initialLessons }) {
                 )}
                 {lesson.reportCount || 0}
               </div>
-
               {/* Access */}
               <span
                 className="text-[11px] font-semibold px-2 py-1 rounded-full w-fit"
                 style={
                   lesson.accessLevel === "premium"
                     ? {
-                        backgroundColor: "rgba(245,158,11,0.08)",
+                        backgroundColor: "#13131f",
                         color: "#fbbf24",
-                        border: "1px solid rgba(245,158,11,0.2)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "rgba(255,255,255,0.7)",
                       }
                     : {
                         backgroundColor: "rgba(59,130,246,0.08)",
@@ -378,7 +376,6 @@ export default function ManageLessonsClient({ initialLessons }) {
               >
                 {lesson.accessLevel || "free"}
               </span>
-
               {/* Actions */}
               <div className="flex items-center gap-1">
                 <Link
