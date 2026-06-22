@@ -19,18 +19,26 @@ async function adminAction(path, method = "PATCH", body) {
   }
 }
 
-export const updateUserRole = (id, role) =>
-  adminAction(`/admin/users/${id}/role`, "PATCH", { role });
-export const suspendUser = (id, suspended) =>
-  adminAction(`/admin/users/${id}/suspend`, "PATCH", { suspended });
-export const deleteUser = (id) => adminAction(`/admin/users/${id}`, "DELETE");
-export const featureLesson = (id, featured) =>
-  adminAction(`/admin/lessons/${id}/feature`, "PATCH", { featured });
-export const markReviewed = (id) =>
-  adminAction(`/admin/lessons/${id}/reviewed`, "PATCH");
-export const deleteLesson = (id) =>
-  adminAction(`/admin/lessons/${id}`, "DELETE");
-export const resolveReports = (lessonId) =>
-  adminAction(`/admin/reports/resolve/${lessonId}`, "PATCH");
-export const deleteLessonReport = (lessonId) =>
-  adminAction(`/admin/lessons/${lessonId}`, "DELETE");
+export const updateUserRole = async (id, role) =>
+  await adminAction(`/admin/users/${id}/role`, "PATCH", { role });
+
+export const suspendUser = async (id, suspended) =>
+  await adminAction(`/admin/users/${id}/suspend`, "PATCH", { suspended });
+
+export const deleteUser = async (id) =>
+  await adminAction(`/admin/users/${id}`, "DELETE");
+
+export const featureLesson = async (id, featured) =>
+  await adminAction(`/admin/lessons/${id}/feature`, "PATCH", { featured });
+
+export const markReviewed = async (id) =>
+  await adminAction(`/admin/lessons/${id}/reviewed`, "PATCH");
+
+export const deleteLesson = async (id) =>
+  await adminAction(`/admin/lessons/${id}`, "DELETE");
+
+export const resolveReports = async (lessonId) =>
+  await adminAction(`/admin/reports/resolve/${lessonId}`, "PATCH");
+
+export const deleteLessonReport = async (lessonId) =>
+  await adminAction(`/admin/lessons/${lessonId}`, "DELETE");
