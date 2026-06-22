@@ -2,7 +2,6 @@
 
 import { getAuthHeaders, getSession } from "../auth-session";
 
-
 const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL;
 
 export const createLesson = async (payload) => {
@@ -21,6 +20,26 @@ export const createLesson = async (payload) => {
         userAvatar: user?.image || null,
       }),
     });
+    const data = await res.json();
+    if (!res.ok) return { success: false, message: data.message };
+    return { success: true, ...data };
+  } catch {
+    return { success: false, message: "Server unreachable" };
+  }
+};
+
+export const updateLesson = async (id, payload) => {
+  try {
+    const session = await getSession();
+    const headers = await getAuthHeaders();
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SERVER_URL}/lessons/${id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(payload),
+      },
+    );
     const data = await res.json();
     if (!res.ok) return { success: false, message: data.message };
     return { success: true, ...data };

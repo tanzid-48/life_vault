@@ -6,22 +6,18 @@ const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL;
 
 export async function getLessonById(id) {
   try {
-   
     const headers = await getAuthHeaders();
-
     const res = await fetch(`${baseUrl}/lessons/${id}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...headers, 
-      },
       cache: "no-store",
+      headers: { "Content-Type": "application/json", ...headers },
     });
-
     if (!res.ok) return null;
-    return await res.json();
-  } catch (error) {
-    console.error("Fetch Error:", error);
+    const data = await res.json();
+    return {
+      ...data,
+      _id: data._id?.$oid || data._id?.toString() || id,
+    };
+  } catch {
     return null;
   }
 }
