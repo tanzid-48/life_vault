@@ -18,18 +18,18 @@ import {
   MessageCircle,
   Send,
   X,
+  Lock,
+  Loader2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-
-import LessonCard from "@/components/LessonCard";
 import {
   addComment,
   reportLesson,
   toggleFavorite,
   toggleLike,
 } from "@/lib/action/lessonDetail";
-// ── helpers
+import LessonCard from "@/components/LessonCard";
+
+// ── color configs
 const TONE_CONFIG = {
   Motivational: {
     color: "#34d399",
@@ -87,6 +87,7 @@ const REPORT_REASONS = [
   "Other",
 ];
 
+// ── helpers
 function fmtDate(d) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("en-US", {
@@ -115,19 +116,51 @@ function initials(name = "") {
   );
 }
 
-// ── main component
+// ── Avatar helper
+
+function Avatar({ src, name, size = 32 }) {
+  return (
+    <div
+      className="rounded-full overflow-hidden shrink-0 flex items-center justify-center text-[10px] font-bold text-violet-400"
+      style={{
+        width: size,
+        height: size,
+        minWidth: size,
+        backgroundColor: "rgba(139,92,246,0.12)",
+        border: "1px solid rgba(139,92,246,0.2)",
+      }}
+    >
+      {src ? (
+        <Image
+          src={src}
+          alt={name || ""}
+          width={size}
+          height={size}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        initials(name)
+      )}
+    </div>
+  );
+}
+
+// ── Main component
+
 export default function LessonDetailClient({
   lesson,
   currentUser,
-  relatedByCategory,
-  relatedByTone,
-  authorLessonCount,
-  initialFavorited,
+  isLocked = false,
+  relatedByCategory = [],
+  relatedByTone = [],
+  initialComments = [],
+  authorLessonCount = 0,
+  initialFavorited = false,
 }) {
   const router = useRouter();
-  const id = lesson._id?.$oid || lesson._id;
+  const id = lesson._id?.$oid || lesson._id?.toString() || lesson._id;
 
-  // ── Like state
+  // ── Like
   const [liked, setLiked] = useState(
     Array.isArray(lesson.likes) && currentUser
       ? lesson.likes.includes(currentUser.id)
@@ -136,16 +169,16 @@ export default function LessonDetailClient({
   const [likesCount, setLikesCount] = useState(lesson.likesCount ?? 0);
   const [likeLoading, setLikeLoading] = useState(false);
 
-  // ── Favorite state
+  // ── Favorite
   const [favorited, setFavorited] = useState(initialFavorited);
   const [favLoading, setFavLoading] = useState(false);
 
   // ── Comments
-  const [comments, setComments] = useState(lesson.comments ?? []);
+  const [comments, setComments] = useState(initialComments);
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
 
-  // ── Report modal
+  // ── Report
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reportLoading, setReportLoading] = useState(false);
@@ -153,69 +186,61 @@ export default function LessonDetailClient({
   // ── handlers
   async function handleLike() {
     if (!currentUser) {
-      toast.error("Please log in to like");
+      toast.error("Please sign in to like");
       router.push("/signin");
       return;
     }
-    if (liked) {
-      return;
-    }
+    if (liked) return;
     setLikeLoading(true);
     const res = await toggleLike(id);
-    if (!res.success) {
-      toast.error(res.message || "Failed");
-    } else {
+    if (res.success) {
       setLiked(true);
       setLikesCount(res.likesCount);
-      toast.success("Liked!");
-    }
+      toast.success("Liked! ❤️");
+    } else toast.error(res.message || "Failed to like");
     setLikeLoading(false);
   }
 
   async function handleFavorite() {
     if (!currentUser) {
-      toast.error("Please log in to save");
+      toast.error("Please sign in to save");
       router.push("/signin");
       return;
     }
     setFavLoading(true);
     const res = await toggleFavorite(id);
-    if (!res.success) {
-      toast.error(res.message || "Failed");
-    } else {
+    if (res.success) {
       setFavorited(res.saved);
       toast.success(
-        res.saved ? "Saved to favorites!" : "Removed from favorites",
+        res.saved ? "Saved to favorites! 🔖" : "Removed from favorites",
       );
-    }
+    } else toast.error(res.message || "Failed");
     setFavLoading(false);
   }
 
   async function handleComment(e) {
     e.preventDefault();
     if (!currentUser) {
-      toast.error("Please log in to comment");
+      toast.error("Please sign in to comment");
       return;
     }
     if (!commentText.trim()) return;
     setCommentLoading(true);
     const res = await addComment(id, commentText.trim());
-    if (!res.success) {
-      toast.error(res.message || "Failed to post comment");
-    } else {
+    if (res.success) {
       setComments((prev) => [
         ...prev,
         res.comment ?? {
-          _id: Date.now(),
+          _id: Date.now().toString(),
           content: commentText.trim(),
           userName: currentUser.name,
-          userAvatar: currentUser.image,
+          userAvatar: currentUser.image ?? null,
           createdAt: new Date().toISOString(),
         },
       ]);
       setCommentText("");
       toast.success("Comment posted!");
-    }
+    } else toast.error(res.message || "Failed to post");
     setCommentLoading(false);
   }
 
@@ -226,17 +251,15 @@ export default function LessonDetailClient({
     }
     setReportLoading(true);
     const res = await reportLesson(id, reportReason);
-    if (!res.success) {
-      toast.error(res.message || "Failed");
-    } else {
+    if (res.success) {
       toast.success("Report submitted. Thank you!");
       setReportOpen(false);
       setReportReason("");
-    }
+    } else toast.error(res.message || "Failed to report");
     setReportLoading(false);
   }
 
-  // ── derived ─────────────────────────────────────────────
+  // ── derived
   const cat = CATEGORY_CONFIG[lesson.category] ?? {
     color: "#a78bfa",
     bg: "rgba(139,92,246,0.1)",
@@ -248,37 +271,38 @@ export default function LessonDetailClient({
     border: "rgba(107,114,128,0.2)",
   };
   const mins = readMins(lesson.description);
-  const [views] = useState(
-    () => lesson.views || Math.floor(Math.random() * 8000 + 500),
-  );
 
+  // ── render
   return (
     <div className="min-h-screen bg-[#080810] text-white">
-      <div className="mx-auto max-w-4xl px-4 py-10">
-        {/* Back */}
+      <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col gap-10">
+        {/* ── Back ── */}
         <Link
           href="/lessons"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white mb-8 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white transition-colors w-fit"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to Lessons
+          <ArrowLeft className="w-4 h-4" /> Back to Lessons
         </Link>
 
-        {/* ── 1. Hero / Cover image ── */}
+        {/* ── Cover image ── */}
         {lesson.imageUrl && (
-          <div className="w-full h-64 sm:h-80 rounded-2xl overflow-hidden mb-8 border border-white/10">
+          <div
+            className="w-full h-64 sm:h-80 rounded-2xl overflow-hidden"
+            style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+          >
             <Image
               src={lesson.imageUrl}
               alt={lesson.title}
               width={900}
               height={400}
-              className="w-full h-full object-cover"
               priority
+              className="w-full h-full object-cover"
             />
           </div>
         )}
 
-        {/* ── 2. Badges ── */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        {/* ── Badges ── */}
+        <div className="flex flex-wrap gap-2 -mb-4">
           <span
             className="text-xs font-semibold px-3 py-1 rounded-full"
             style={{
@@ -313,20 +337,104 @@ export default function LessonDetailClient({
           )}
         </div>
 
-        {/* ── 3. Title + Description ── */}
-        <h1 className="text-3xl sm:text-4xl font-black text-white leading-tight mb-6">
+        {/* ── Title ── */}
+        <h1 className="text-3xl sm:text-4xl font-black text-white leading-tight">
           {lesson.title}
         </h1>
-        <p className="text-base text-white/70 leading-relaxed whitespace-pre-wrap mb-10">
-          {lesson.description}
-        </p>
 
-        {/* ── 4. Metadata block ── */}
+        {/* ── Author row ── */}
+        <div className="flex items-center gap-3 -mt-4">
+          <Avatar src={lesson.userAvatar} name={lesson.userName} size={36} />
+          <div>
+            <p className="text-sm font-semibold text-white/70">
+              {lesson.userName || "Anonymous"}
+            </p>
+            <p className="text-[11px] text-white/30">
+              {fmtDate(lesson.createdAt)}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 ml-auto text-xs text-white/30">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> ~{mins} min
+            </span>
+            <span className="flex items-center gap-1">
+              <Eye className="w-3.5 h-3.5" /> {fmtCount(lesson.views || 0)}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Divider ── */}
         <div
-          className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10 p-5 rounded-2xl"
+          style={{ height: "1px", backgroundColor: "rgba(255,255,255,0.07)" }}
+        />
+
+        {/* ── Content or Lock ── */}
+        {isLocked ? (
+          <div className="flex flex-col gap-4">
+            {/* Blurred preview */}
+            <div className="relative overflow-hidden rounded-2xl">
+              <p className="text-base text-white/70 leading-relaxed whitespace-pre-wrap blur-sm select-none pointer-events-none">
+                {lesson.description?.slice(0, 300)}...
+              </p>
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(to bottom, transparent 0%, #080810 80%)",
+                }}
+              />
+            </div>
+            {/* Upgrade banner */}
+            <div
+              className="flex flex-col items-center justify-center gap-5 py-14 px-6 rounded-2xl text-center"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.018)",
+                border: "1px dashed rgba(139,92,246,0.25)",
+              }}
+            >
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.05))",
+                  border: "1px solid rgba(251,191,36,0.25)",
+                }}
+              >
+                <Lock className="w-8 h-8 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-white">Premium Lesson</p>
+                <p className="text-sm text-white/40 mt-1.5 max-w-sm">
+                  Upgrade to Premium to unlock this lesson and all premium
+                  content on LifeVault.
+                </p>
+              </div>
+              <Link
+                href="/pricing"
+                className="flex items-center gap-2 px-8 h-12 rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+                style={{
+                  background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                  color: "#000",
+                  boxShadow: "0 4px 20px rgba(245,158,11,0.35)",
+                }}
+              >
+                <Star className="w-4 h-4 fill-black" /> Upgrade to Premium —
+                ৳1500
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <p className="text-base text-white/75 leading-relaxed whitespace-pre-wrap">
+            {lesson.description}
+          </p>
+        )}
+
+        {/* ── Metadata block ── */}
+        <div
+          className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 rounded-2xl"
           style={{
-            backgroundColor: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "rgba(255,255,255,0.025)",
+            border: "1px solid rgba(255,255,255,0.07)",
           }}
         >
           {[
@@ -343,81 +451,69 @@ export default function LessonDetailClient({
             {
               icon: Globe,
               label: "Visibility",
-              value: lesson.isPublic ? "Public" : "Private",
+              value: lesson.isPublic !== false ? "Public" : "Private",
             },
             { icon: Clock, label: "Read time", value: `~${mins} min` },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label}>
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30 mb-1 flex items-center gap-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-1 flex items-center gap-1">
                 <Icon className="w-3 h-3" /> {label}
               </p>
-              <p className="text-sm font-semibold text-white/80">{value}</p>
+              <p className="text-sm font-semibold text-white/70">{value}</p>
             </div>
           ))}
         </div>
 
-        {/* ── 5. Author card ── */}
-        <div
-          className="flex items-start gap-4 p-5 rounded-2xl mb-10"
-          style={{
-            backgroundColor: "rgba(139,92,246,0.06)",
-            border: "1px solid rgba(139,92,246,0.15)",
-          }}
-        >
+        {/* ── Author card ── */}
+        {!isLocked && (
           <div
-            className="w-12 h-12 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-sm font-bold text-violet-400"
+            className="flex items-start gap-4 p-5 rounded-2xl"
             style={{
-              backgroundColor: "rgba(139,92,246,0.15)",
-              border: "1px solid rgba(139,92,246,0.3)",
+              backgroundColor: "rgba(139,92,246,0.06)",
+              border: "1px solid rgba(139,92,246,0.15)",
             }}
           >
-            {lesson.userAvatar ? (
-              <Image
-                src={lesson.userAvatar}
-                alt={lesson.userName}
-                width={48}
-                height={48}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              initials(lesson.userName)
-            )}
+            <Avatar src={lesson.userAvatar} name={lesson.userName} size={48} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-white">
+                {lesson.userName || "Anonymous"}
+              </p>
+              <p className="text-xs text-white/40 mt-0.5">
+                {authorLessonCount} lesson{authorLessonCount !== 1 ? "s" : ""}{" "}
+                written
+              </p>
+              <Link
+                href={`/lessons?userId=${lesson.userId}`}
+                className="inline-block mt-2 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                View all lessons by this author →
+              </Link>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white">
-              {lesson.userName || "Anonymous"}
-            </p>
-            <p className="text-xs text-white/40 mt-0.5">
-              {authorLessonCount} lesson{authorLessonCount !== 1 ? "s" : ""}{" "}
-              written
-            </p>
-            <Link
-              href={`/author/${lesson.userId}`}
-              className="inline-block mt-2 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
-            >
-              View all lessons →
-            </Link>
-          </div>
-        </div>
+        )}
 
-        {/* ── 6. Stats & Interaction row ── */}
-        <div className="flex flex-wrap items-center gap-3 mb-10">
+        {/* ── Stats & Interaction row ── */}
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* Like */}
           <button
             onClick={handleLike}
             disabled={likeLoading || liked}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:cursor-default"
+            className="flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-all disabled:cursor-default"
             style={{
               backgroundColor: liked
-                ? "rgba(239,68,68,0.15)"
-                : "rgba(255,255,255,0.05)",
-              border: `1px solid ${liked ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.1)"}`,
-              color: liked ? "#f87171" : "rgba(255,255,255,0.6)",
+                ? "rgba(239,68,68,0.12)"
+                : "rgba(255,255,255,0.04)",
+              border: `1px solid ${liked ? "rgba(239,68,68,0.35)" : "rgba(255,255,255,0.1)"}`,
+              color: liked ? "#f87171" : "rgba(255,255,255,0.55)",
             }}
           >
-            <Heart
-              className={`w-4 h-4 ${liked ? "fill-red-400 text-red-400" : ""}`}
-            />
+            {likeLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Heart
+                className={`w-4 h-4 transition-all ${liked ? "fill-red-400 text-red-400 scale-110" : ""}`}
+              />
+            )}
             {fmtCount(likesCount)} Likes
           </button>
 
@@ -425,235 +521,269 @@ export default function LessonDetailClient({
           <button
             onClick={handleFavorite}
             disabled={favLoading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+            className="flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-all"
             style={{
               backgroundColor: favorited
-                ? "rgba(139,92,246,0.15)"
-                : "rgba(255,255,255,0.05)",
-              border: `1px solid ${favorited ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.1)"}`,
-              color: favorited ? "#a78bfa" : "rgba(255,255,255,0.6)",
+                ? "rgba(139,92,246,0.12)"
+                : "rgba(255,255,255,0.04)",
+              border: `1px solid ${favorited ? "rgba(139,92,246,0.35)" : "rgba(255,255,255,0.1)"}`,
+              color: favorited ? "#a78bfa" : "rgba(255,255,255,0.55)",
             }}
           >
-            <Bookmark
-              className={`w-4 h-4 ${favorited ? "fill-violet-400 text-violet-400" : ""}`}
-            />
+            {favLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Bookmark
+                className={`w-4 h-4 ${favorited ? "fill-violet-400 text-violet-400" : ""}`}
+              />
+            )}
             {favorited ? "Saved" : "Save"}
           </button>
 
           {/* Views */}
           <div
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+            className="flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold"
             style={{
-              backgroundColor: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "rgba(255,255,255,0.4)",
+              backgroundColor: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.35)",
             }}
           >
-            <Eye className="w-4 h-4" /> {fmtCount(views)} Views
+            <Eye className="w-4 h-4" /> {fmtCount(lesson.views || 0)}
           </div>
 
           {/* Comments count */}
           <div
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+            className="flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold"
             style={{
-              backgroundColor: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "rgba(255,255,255,0.4)",
+              backgroundColor: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.35)",
             }}
           >
-            <MessageCircle className="w-4 h-4" /> {comments.length} Comments
+            <MessageCircle className="w-4 h-4" /> {comments.length}
           </div>
 
-          {/* Report */}
+          {/* Report — ml-auto */}
           <button
             onClick={() => {
               if (!currentUser) {
-                toast.error("Please log in to report");
+                toast.error("Sign in to report");
                 return;
               }
               setReportOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ml-auto"
+            className="flex items-center gap-2 px-4 h-10 rounded-xl text-sm font-semibold transition-all ml-auto"
             style={{
-              backgroundColor: "rgba(239,68,68,0.08)",
-              border: "1px solid rgba(239,68,68,0.2)",
-              color: "rgba(239,68,68,0.7)",
+              backgroundColor: "rgba(239,68,68,0.06)",
+              border: "1px solid rgba(239,68,68,0.18)",
+              color: "rgba(239,68,68,0.65)",
             }}
           >
             <Flag className="w-4 h-4" /> Report
           </button>
         </div>
 
-        {/* ── 7. Comments ── */}
-        <section className="mb-14">
-          <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-violet-400" /> Comments
+        {/* ── Divider ── */}
+        <div
+          style={{ height: "1px", backgroundColor: "rgba(255,255,255,0.07)" }}
+        />
+
+        {/* ── Comments section ── */}
+        <section className="flex flex-col gap-6">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-violet-400" />
+            Comments{" "}
+            <span className="text-sm font-normal text-white/30">
+              ({comments.length})
+            </span>
           </h2>
 
+          {/* Comment input */}
           {currentUser ? (
-            <form onSubmit={handleComment} className="flex gap-3 mb-6">
-              <div
-                className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold text-violet-400"
-                style={{
-                  backgroundColor: "rgba(139,92,246,0.15)",
-                  border: "1px solid rgba(139,92,246,0.3)",
-                }}
-              >
-                {currentUser.image ? (
-                  <Image
-                    src={currentUser.image}
-                    alt={currentUser.name}
-                    width={32}
-                    height={32}
-                    className="rounded-full object-cover"
-                  />
-                ) : (
-                  initials(currentUser.name)
-                )}
-              </div>
+            <form onSubmit={handleComment} className="flex gap-3 items-start">
+              <Avatar
+                src={currentUser.image}
+                name={currentUser.name}
+                size={32}
+              />
               <div className="flex-1 flex gap-2">
-                <Textarea
+                <textarea
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Share your thoughts..."
                   rows={2}
-                  className="bg-white/5 border-white/10 text-white text-sm resize-none focus:ring-violet-500"
+                  className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder:text-white/25 outline-none resize-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400/50 transition-all"
                 />
-                <Button
+                <button
                   type="submit"
                   disabled={commentLoading || !commentText.trim()}
-                  className="shrink-0 bg-violet-600 hover:bg-violet-700 h-auto px-4"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all disabled:opacity-40 self-end"
+                  style={{
+                    background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
+                  }}
                 >
-                  <Send className="w-4 h-4" />
-                </Button>
+                  {commentLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                  ) : (
+                    <Send className="w-4 h-4 text-white" />
+                  )}
+                </button>
               </div>
             </form>
           ) : (
-            <p className="text-sm text-white/40 mb-6">
-              <Link href="/signin" className="text-violet-400 hover:underline">
-                Sign in
-              </Link>{" "}
-              to leave a comment.
-            </p>
+            <div
+              className="flex items-center gap-3 p-4 rounded-xl"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.02)",
+                border: "1px solid rgba(255,255,255,0.07)",
+              }}
+            >
+              <MessageCircle className="w-5 h-5 text-white/25 shrink-0" />
+              <p className="text-sm text-white/40">
+                <Link
+                  href="/signin"
+                  className="text-violet-400 hover:underline font-semibold"
+                >
+                  Sign in
+                </Link>{" "}
+                to leave a comment.
+              </p>
+            </div>
           )}
 
-          <div className="space-y-4">
-            {comments.length === 0 && (
-              <p className="text-sm text-white/30 py-6 text-center">
+          {/* Comments list */}
+          {comments.length === 0 ? (
+            <div
+              className="flex flex-col items-center justify-center py-12 rounded-2xl text-center gap-2"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.018)",
+                border: "1px dashed rgba(255,255,255,0.07)",
+              }}
+            >
+              <MessageCircle className="w-8 h-8 text-white/10" />
+              <p className="text-sm text-white/30">
                 No comments yet. Be the first!
               </p>
-            )}
-            {comments.map((c, i) => (
-              <div
-                key={c._id ?? i}
-                className="flex gap-3 p-4 rounded-xl"
-                style={{
-                  backgroundColor: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                }}
-              >
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {comments.map((c, i) => (
                 <div
-                  className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center text-[10px] font-bold text-violet-400 mt-0.5"
+                  key={c._id ?? i}
+                  className="flex gap-3 p-4 rounded-2xl"
                   style={{
-                    backgroundColor: "rgba(139,92,246,0.12)",
-                    border: "1px solid rgba(139,92,246,0.2)",
+                    backgroundColor: "rgba(255,255,255,0.025)",
+                    border: "1px solid rgba(255,255,255,0.07)",
                   }}
                 >
-                  {c.userAvatar ? (
-                    <Image
-                      src={c.userAvatar}
-                      alt={c.userName}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover"
-                    />
-                  ) : (
-                    initials(c.userName)
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-white/80">
-                      {c.userName || "Anonymous"}
-                    </span>
-                    <span className="text-[10px] text-white/25">
-                      {fmtDate(c.createdAt)}
-                    </span>
+                  <Avatar src={c.userAvatar} name={c.userName} size={32} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-xs font-bold text-white/80">
+                        {c.userName || "Anonymous"}
+                      </span>
+                      <span className="text-[10px] text-white/25">
+                        {fmtDate(c.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-white/60 leading-relaxed">
+                      {c.content}
+                    </p>
                   </div>
-                  <p className="text-sm text-white/60 leading-relaxed">
-                    {c.content}
-                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
-        {/* ── 8. Similar lessons ── */}
+        {/* ── Related — same category ── */}
         {relatedByCategory.length > 0 && (
-          <section className="mb-14">
-            <h2 className="text-lg font-bold text-white mb-5">
+          <section className="flex flex-col gap-5">
+            <h2 className="text-lg font-bold text-white">
               More in <span className="text-violet-400">{lesson.category}</span>
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {relatedByCategory.slice(0, 6).map((l) => (
-                <LessonCard key={l._id} lesson={l} currentUser={null} />
+              {relatedByCategory.slice(0, 3).map((l) => (
+                <LessonCard
+                  key={l._id?.$oid || l._id}
+                  lesson={l}
+                  currentUser={currentUser}
+                />
               ))}
             </div>
           </section>
         )}
 
+        {/* ── Related — same tone ── */}
         {relatedByTone.length > 0 && (
-          <section>
-            <h2 className="text-lg font-bold text-white mb-5">
+          <section className="flex flex-col gap-5">
+            <h2 className="text-lg font-bold text-white">
               More{" "}
               <span className="text-violet-400">{lesson.emotionalTone}</span>{" "}
               lessons
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {relatedByTone.slice(0, 6).map((l) => (
-                <LessonCard key={l._id} lesson={l} currentUser={null} />
+              {relatedByTone.slice(0, 3).map((l) => (
+                <LessonCard
+                  key={l._id?.$oid || l._id}
+                  lesson={l}
+                  currentUser={currentUser}
+                />
               ))}
             </div>
           </section>
         )}
       </div>
 
-      {/* ── Report modal ── */}
+      {/* ── Report Modal ── */}
       {reportOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{
-            backgroundColor: "rgba(0,0,0,0.7)",
-            backdropFilter: "blur(6px)",
+            backgroundColor: "rgba(0,0,0,0.75)",
+            backdropFilter: "blur(8px)",
           }}
+          onClick={() => setReportOpen(false)}
         >
           <div
-            className="w-full max-w-sm rounded-2xl p-6 space-y-4"
+            className="w-full max-w-sm rounded-2xl p-6 flex flex-col gap-5"
             style={{
-              backgroundColor: "#0f0f1a",
+              backgroundColor: "#13131f",
               border: "1px solid rgba(255,255,255,0.1)",
             }}
+            onClick={(e) => e.stopPropagation()}
           >
+            {/* Header */}
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Flag className="w-4 h-4 text-red-400" /> Report Lesson
               </h3>
               <button
                 onClick={() => setReportOpen(false)}
-                className="text-white/40 hover:text-white"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <p className="text-sm text-white/50">
-              Select the reason for reporting this lesson:
+
+            <p className="text-sm text-white/45">
+              Select a reason for reporting:
             </p>
-            <div className="space-y-2">
+
+            {/* Reasons */}
+            <div className="flex flex-col gap-2">
               {REPORT_REASONS.map((r) => (
                 <label
                   key={r}
-                  className="flex items-center gap-3 cursor-pointer group"
+                  className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all"
+                  style={{
+                    backgroundColor:
+                      reportReason === r
+                        ? "rgba(139,92,246,0.1)"
+                        : "rgba(255,255,255,0.02)",
+                    border: `1px solid ${reportReason === r ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.07)"}`,
+                  }}
                 >
                   <input
                     type="radio"
@@ -663,27 +793,41 @@ export default function LessonDetailClient({
                     onChange={() => setReportReason(r)}
                     className="accent-violet-500"
                   />
-                  <span className="text-sm text-white/60 group-hover:text-white transition-colors">
-                    {r}
-                  </span>
+                  <span className="text-sm text-white/65">{r}</span>
                 </label>
               ))}
             </div>
-            <div className="flex gap-3 pt-2">
-              <Button
-                variant="outline"
-                className="flex-1 border-white/10 text-white/60 hover:text-white"
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-1">
+              <button
                 onClick={() => setReportOpen(false)}
+                className="flex-1 h-10 rounded-xl text-sm font-semibold transition-all hover:bg-white/10"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.55)",
+                }}
               >
                 Cancel
-              </Button>
-              <Button
-                className="flex-1 bg-red-500 hover:bg-red-600 font-bold"
+              </button>
+              <button
                 onClick={handleReport}
-                disabled={reportLoading}
+                disabled={reportLoading || !reportReason}
+                className="flex-1 h-10 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                style={{
+                  backgroundColor: "rgba(239,68,68,0.15)",
+                  border: "1px solid rgba(239,68,68,0.3)",
+                  color: "#f87171",
+                }}
               >
-                {reportLoading ? "Submitting…" : "Submit Report"}
-              </Button>
+                {reportLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Flag className="w-4 h-4" />
+                )}
+                Submit
+              </button>
             </div>
           </div>
         </div>

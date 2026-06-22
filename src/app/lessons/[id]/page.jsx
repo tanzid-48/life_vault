@@ -1,8 +1,23 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
-
 import LessonDetailClient from "./LessonDetailClient";
-import { getAuthorLessonCount, getFavoriteStatus, getLessonById, getLessonsByFilter } from "@/lib/action/lessonDetail";
+import {
+  getLessonById,
+  getLessonsByFilter,
+  getAuthorLessonCount,
+  getFavoriteStatus,
+  getComments,
+} from "@/lib/action/lessonDetail";
+
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const lesson = await getLessonById(id);
+  if (!lesson) return { title: "Lesson Not Found | LifeVault" };
+  return {
+    title: `${lesson.title} | LifeVault`,
+    description: lesson.description?.slice(0, 150),
+  };
+}
 
 export default async function LessonDetailPage({ params }) {
   const { id } = await params;
@@ -16,33 +31,36 @@ export default async function LessonDetailPage({ params }) {
 
   const currentUser = session?.user ?? null;
   const userIsPremium = currentUser?.isPremium === true;
+  const isOwner = currentUser?.id === lesson.userId;
+  const isLocked =
+    lesson.accessLevel === "premium" && !userIsPremium && !isOwner;
 
-  // Premium lesson + non-premium user → redirect
-  if (lesson.accessLevel === "premium" && !userIsPremium) {
-    redirect(`/pricing?reason=premium-lesson&from=/lessons/${id}`);
-  }
-
-  // Related lessons — same category OR same tone, excluding this lesson
-  const [byCat, byTone] = await Promise.all([
-    getLessonsByFilter({ category: lesson.category, excludeId: id, limit: 6 }),
-    getLessonsByFilter({
-      emotionalTone: lesson.emotionalTone,
-      excludeId: id,
-      limit: 6,
-    }),
-  ]);
-
-  const authorLessonCount = await getAuthorLessonCount(lesson.userId);
-
-  // Initial favorite status (only if logged in)
-  const initialFavorited = currentUser ? await getFavoriteStatus(id) : false;
+  // parallel fetch — no waterfall
+  const [byCat, byTone, initialComments, authorLessonCount, initialFavorited] =
+    await Promise.all([
+      getLessonsByFilter({
+        category: lesson.category,
+        excludeId: id,
+        limit: 6,
+      }),
+      getLessonsByFilter({
+        emotionalTone: lesson.emotionalTone,
+        excludeId: id,
+        limit: 6,
+      }),
+      getComments(id),
+      getAuthorLessonCount(lesson.userId),
+      currentUser ? getFavoriteStatus(id) : Promise.resolve(false),
+    ]);
 
   return (
     <LessonDetailClient
       lesson={lesson}
       currentUser={currentUser}
+      isLocked={isLocked}
       relatedByCategory={byCat}
       relatedByTone={byTone}
+      initialComments={initialComments}
       authorLessonCount={authorLessonCount}
       initialFavorited={initialFavorited}
     />

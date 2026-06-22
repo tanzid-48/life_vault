@@ -1,15 +1,14 @@
 "use server";
-
 import { getAuthHeaders } from "@/lib/auth-session";
 
-const baseUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+const base = process.env.NEXT_PUBLIC_SERVER_URL;
+
+// ── PUBLIC
 
 export async function getLessonById(id) {
   try {
-    const headers = await getAuthHeaders();
-    const res = await fetch(`${baseUrl}/lessons/${id}`, {
+    const res = await fetch(`${base}/lessons/${id}`, {
       cache: "no-store",
-      headers: { "Content-Type": "application/json", ...headers },
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -27,18 +26,19 @@ export const getLessonsByFilter = async ({
   emotionalTone,
   excludeId,
   limit = 6,
-}) => {
+} = {}) => {
   try {
-    const params = new URLSearchParams({ limit });
+    const params = new URLSearchParams({ limit: String(limit) });
     if (category) params.set("category", category);
     if (emotionalTone) params.set("emotionalTone", emotionalTone);
-    if (excludeId) params.set("excludeId", excludeId);
-    const res = await fetch(`${baseUrl}/lessons?${params}`, {
-      cache: "no-store",
-    });
+    const res = await fetch(`${base}/lessons?${params}`, { cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json();
-    return Array.isArray(data) ? data : (data.lessons ?? []);
+    const arr = Array.isArray(data) ? data : (data.lessons ?? []);
+
+    return arr.filter(
+      (l) => (l._id?.$oid || l._id?.toString() || l._id) !== excludeId,
+    );
   } catch {
     return [];
   }
@@ -46,26 +46,54 @@ export const getLessonsByFilter = async ({
 
 export const getAuthorLessonCount = async (userId) => {
   try {
-    const params = new URLSearchParams({ userId, limit: 1 });
-    const res = await fetch(`${baseUrl}/lessons?${params}`, {
+    if (!userId) return 0;
+    const res = await fetch(`${base}/lessons?userId=${userId}`, {
       cache: "no-store",
     });
     if (!res.ok) return 0;
     const data = await res.json();
-    return data.total ?? 0;
+    if (Array.isArray(data)) return data.length;
+    return data.total ?? data.lessons?.length ?? 0;
   } catch {
     return 0;
   }
 };
 
-// ── Protected
+export const getComments = async (lessonId) => {
+  try {
+    const res = await fetch(`${base}/comments?lessonId=${lessonId}`, {
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+};
+
+// ── PROTECTED
+
+export const getFavoriteStatus = async (lessonId) => {
+  try {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${base}/favorites/${lessonId}/status`, {
+      cache: "no-store",
+      headers,
+    });
+    if (!res.ok) return false;
+    const d = await res.json();
+    return d.saved ?? false;
+  } catch {
+    return false;
+  }
+};
 
 export const toggleLike = async (lessonId) => {
   try {
-    const authHeaders = await getAuthHeaders();
-    const res = await fetch(`${baseUrl}/lessons/${lessonId}/like`, {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${base}/lessons/${lessonId}/like`, {
       method: "POST",
-      headers: { ...authHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
     });
     const d = await res.json();
     if (!res.ok) return { success: false, message: d.message };
@@ -77,10 +105,10 @@ export const toggleLike = async (lessonId) => {
 
 export const toggleFavorite = async (lessonId) => {
   try {
-    const authHeaders = await getAuthHeaders();
-    const res = await fetch(`${baseUrl}/favorites/${lessonId}`, {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${base}/favorites/${lessonId}`, {
       method: "POST",
-      headers: { ...authHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
     });
     const d = await res.json();
     if (!res.ok) return { success: false, message: d.message };
@@ -90,39 +118,12 @@ export const toggleFavorite = async (lessonId) => {
   }
 };
 
-export const getFavoriteStatus = async (lessonId) => {
-  try {
-    const authHeaders = await getAuthHeaders();
-    const res = await fetch(`${baseUrl}/favorites/${lessonId}/status`, {
-      headers: authHeaders,
-      cache: "no-store",
-    });
-    if (!res.ok) return false;
-    const d = await res.json();
-    return d.saved ?? false;
-  } catch {
-    return false;
-  }
-};
-
-export const getComments = async (lessonId) => {
-  try {
-    const res = await fetch(`${baseUrl}/comments?lessonId=${lessonId}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    return res.json();
-  } catch {
-    return [];
-  }
-};
-
 export const addComment = async (lessonId, content) => {
   try {
-    const authHeaders = await getAuthHeaders();
-    const res = await fetch(`${baseUrl}/comments`, {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${base}/comments`, {
       method: "POST",
-      headers: { ...authHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify({ lessonId, content }),
     });
     const d = await res.json();
@@ -135,10 +136,10 @@ export const addComment = async (lessonId, content) => {
 
 export const reportLesson = async (lessonId, reason) => {
   try {
-    const authHeaders = await getAuthHeaders();
-    const res = await fetch(`${baseUrl}/reports`, {
+    const headers = await getAuthHeaders();
+    const res = await fetch(`${base}/reports`, {
       method: "POST",
-      headers: { ...authHeaders, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify({ lessonId, reason }),
     });
     const d = await res.json();
