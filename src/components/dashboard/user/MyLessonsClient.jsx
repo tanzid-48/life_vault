@@ -147,14 +147,16 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
         field === "visibility"
           ? { isPublic: newVal === "public" }
           : { accessLevel: newVal };
+
       const res = await updateLessonField(lessonId, body);
-      if (res.ok) {
+
+      if (res.success) {
         onChange(lessonId, field, newVal);
         toast.success(
           `${field === "visibility" ? "Visibility" : "Access level"} updated`,
         );
       } else {
-        toast.error("Failed to update");
+        toast.error(res.message || "Failed to update");
       }
     } catch {
       toast.error("Something went wrong");
