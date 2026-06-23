@@ -15,7 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { deleteLesson, featureLesson, markReviewed } from "@/lib/action/admin";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 const CATEGORIES = [
   "All",
@@ -93,8 +93,15 @@ function ConfirmModal({ title, desc, onConfirm, onCancel, loading }) {
   );
 }
 
-export default function ManageLessonsClient({ initialLessons }) {
+export default function ManageLessonsClient({
+  initialLessons,
+  currentPage,
+  totalPages,
+  total,
+}) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [lessons, setLessons] = useState(initialLessons);
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState("All");
@@ -508,6 +515,84 @@ export default function ManageLessonsClient({ initialLessons }) {
           );
         })}
       </div>
+      <AdminPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        pathname={pathname}
+        searchParams={searchParams}
+      />
     </>
+  );
+}
+function AdminPagination({ currentPage, totalPages, pathname, searchParams }) {
+  const router = useRouter();
+
+  if (totalPages <= 1) return null;
+
+  function goToPage(page) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(page));
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
+  return (
+    <div
+      className="flex items-center justify-between pt-4 mt-6"
+      style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+    >
+      <p className="text-xs text-white/30">
+        Page {currentPage} of {totalPages}
+      </p>
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="h-8 px-3 rounded-lg text-xs font-semibold transition-all disabled:opacity-30 disabled:pointer-events-none"
+          style={{
+            backgroundColor: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "rgba(255,255,255,0.6)",
+          }}
+        >
+          ← Prev
+        </button>
+
+        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+          const start = Math.max(1, currentPage - 2);
+          const p = start + i;
+          if (p > totalPages) return null;
+          return (
+            <button
+              key={p}
+              onClick={() => goToPage(p)}
+              className="h-8 w-8 rounded-lg text-xs font-semibold transition-all"
+              style={{
+                backgroundColor:
+                  p === currentPage
+                    ? "rgba(139,92,246,0.9)"
+                    : "rgba(255,255,255,0.04)",
+                color: p === currentPage ? "#fff" : "rgba(255,255,255,0.5)",
+                border: `1px solid ${p === currentPage ? "rgba(139,92,246,0.9)" : "rgba(255,255,255,0.08)"}`,
+              }}
+            >
+              {p}
+            </button>
+          );
+        })}
+
+        <button
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="h-8 px-3 rounded-lg text-xs font-semibold transition-all disabled:opacity-30 disabled:pointer-events-none"
+          style={{
+            backgroundColor: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "rgba(255,255,255,0.6)",
+          }}
+        >
+          Next →
+        </button>
+      </div>
+    </div>
   );
 }

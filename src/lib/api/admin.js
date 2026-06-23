@@ -17,8 +17,24 @@ async function adminFetch(path, opts = {}) {
   return res.json();
 }
 
+export async function getAdminLessons(params = {}) {
+  try {
+    const query = new URLSearchParams({
+      page: params.page || 1,
+      limit: params.limit || 10,
+      ...(params.category && { category: params.category }),
+      ...(params.accessLevel && { accessLevel: params.accessLevel }),
+      ...(params.search && { search: params.search }),
+    }).toString();
+
+    return await adminFetch(`/admin/lessons?${query}`);
+  } catch (error) {
+    console.error("Error fetching admin lessons:", error);
+
+    return { lessons: [], total: 0, totalPages: 1, page: 1 };
+  }
+}
+
 export const getAdminStats = () => adminFetch("/admin/stats");
 export const getAdminUsers = () => adminFetch("/admin/users");
-export const getAdminLessons = (params = {}) =>
-  adminFetch(`/admin/lessons?${new URLSearchParams(params)}`);
 export const getAdminReports = () => adminFetch("/admin/reports");

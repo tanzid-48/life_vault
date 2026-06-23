@@ -5,11 +5,18 @@ export const metadata = { title: "Manage Lessons | Admin" };
 
 export default async function ManageLessonsPage({ searchParams }) {
   const sp = await searchParams;
-  const lessons = await getAdminLessons({
-    category: sp?.category || "",
-    accessLevel: sp?.accessLevel || "",
-    search: sp?.search || "",
+  const page = Number(sp?.page) || 1;
+  const limit = 10;
+
+  const data = await getAdminLessons({
+    page,
+    limit,
+    category: sp?.category,
+    accessLevel: sp?.accessLevel,
+    search: sp?.search,
   });
+
+  const lessons = data.lessons ?? [];
 
   const pub = lessons.filter((l) => l.isPublic !== false).length;
   const priv = lessons.filter((l) => l.isPublic === false).length;
@@ -25,7 +32,7 @@ export default async function ManageLessonsPage({ searchParams }) {
           Manage Lessons
         </h1>
         <p className="text-sm text-white/35 mt-1">
-          {lessons.length} total lessons on the platform
+          {data.total ?? lessons.length} total lessons on the platform
         </p>
       </div>
 
@@ -52,7 +59,12 @@ export default async function ManageLessonsPage({ searchParams }) {
         ))}
       </div>
 
-      <ManageLessonsClient initialLessons={lessons} />
+      <ManageLessonsClient
+        initialLessons={data.lessons}
+        currentPage={data.page}
+        totalPages={data.totalPages}
+        total={data.total}
+      />
     </div>
   );
 }
