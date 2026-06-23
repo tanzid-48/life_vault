@@ -105,28 +105,17 @@ function DeleteModal({ lesson, onConfirm, onCancel, loading }) {
 function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [position, setPosition] = useState({});
-  const buttonRef = useRef(null);
+  const ref = useRef(null);
 
+  // ── outside click close ──
   useEffect(() => {
-    if (open && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setPosition({
-        top: rect.bottom + window.scrollY + 5,
-        left: rect.left + window.scrollX,
-      });
+    if (!open) return;
+    function handle(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
   }, [open]);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (buttonRef.current && !buttonRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
 
   const handleSelect = async (newVal) => {
     if (newVal === value) {
@@ -135,13 +124,13 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
     }
 
     if (field === "accessLevel" && newVal === "premium" && !isPremium) {
-      toast.error("Upgrade to Premium to create premium lessons");
+      toast.error("Upgrade to Premium to unlock this");
       setOpen(false);
       return;
     }
 
-    setLoading(true);
     setOpen(false);
+    setLoading(true);
     try {
       const body =
         field === "visibility"
@@ -153,7 +142,9 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
       if (res.success) {
         onChange(lessonId, field, newVal);
         toast.success(
-          `${field === "visibility" ? "Visibility" : "Access level"} updated`,
+          field === "visibility"
+            ? "Visibility updated"
+            : "Access level updated",
         );
       } else {
         toast.error(res.message || "Failed to update");
@@ -168,15 +159,13 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
   const current = options.find((o) => o.value === value);
 
   return (
-    <div className="relative">
+    <div ref={ref} className="relative">
+      {/* ── Trigger badge ── */}
       <button
-        ref={buttonRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((p) => !p);
-        }}
+        type="button"
+        onClick={() => !loading && setOpen((p) => !p)}
         disabled={loading}
-        className="flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-[11px] font-semibold transition-all disabled:opacity-50"
+        className="flex items-center gap-1.5 px-2.5 h-7 rounded-lg text-[11px] font-semibold transition-all disabled:opacity-50 select-none"
         style={{
           backgroundColor: current?.bg || "rgba(255,255,255,0.05)",
           color: current?.color || "rgba(255,255,255,0.5)",
@@ -184,34 +173,70 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
         }}
       >
         {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : current?.icon}
-        {current?.label}
-        {!loading && <ChevronDown className="w-3 h-3 opacity-50" />}
+        <span>{current?.label}</span>
+        {!loading && (
+          <ChevronDown
+            className="w-3 h-3 opacity-40 transition-transform duration-150"
+            style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+          />
+        )}
       </button>
 
+      {/* ── Dropdown ── */}
       {open && (
         <div
-          className="fixed z-[9999] rounded-xl overflow-hidden shadow-xl min-w-[130px]"
+          className="absolute top-full left-0 mt-1.5 z-50 rounded-xl overflow-hidden shadow-2xl"
           style={{
-            top: position.top,
-            left: position.left,
+            minWidth: "130px",
             backgroundColor: "#13131f",
             border: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
           }}
         >
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => handleSelect(opt.value)}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold transition-colors hover:bg-white/5 text-left"
-              style={{ color: opt.color }}
-            >
-              {opt.icon}
-              {opt.label}
-              {opt.value === value && (
-                <Check className="w-3 h-3 ml-auto opacity-60" />
-              )}
-            </button>
-          ))}
+          {options.map((opt) => {
+            const isActive = opt.value === value;
+            const isLocked =
+              opt.value === "premium" && field === "accessLevel" && !isPremium;
+
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => !isLocked && handleSelect(opt.value)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-xs font-semibold text-left transition-colors"
+                style={{
+                  color: isLocked ? "rgba(255,255,255,0.25)" : opt.color,
+                  backgroundColor: isActive ? `${opt.color}10` : "transparent",
+                  cursor: isLocked ? "not-allowed" : "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive && !isLocked)
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(255,255,255,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = isActive
+                    ? `${opt.color}10`
+                    : "transparent";
+                }}
+              >
+                {/* icon */}
+                <span className="shrink-0">{opt.icon}</span>
+
+                {/* label */}
+                <span className="flex-1">{opt.label}</span>
+
+                {/* right side */}
+                {isLocked ? (
+                  <span className="text-[9px] text-amber-400/50 font-bold shrink-0">
+                    PRO
+                  </span>
+                ) : isActive ? (
+                  <Check className="w-3 h-3 opacity-50 shrink-0" />
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
