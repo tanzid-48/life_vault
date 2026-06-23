@@ -73,15 +73,14 @@ export default function EditLessonForm({ initialData, isPremium }) {
       }
 
       toast.success("Lesson updated! ✅");
-      router.push("/dashboard/user/my-lessons");
-      router.refresh();
+
+      window.location.href = "/dashboard/user/my-lessons";
     } catch (err) {
       toast.error(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   }
-
   const wc = wordCount(form.description);
   const mins = Math.max(1, Math.ceil(wc / 200));
 

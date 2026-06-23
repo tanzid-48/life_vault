@@ -17,7 +17,6 @@ export default async function EditLessonPage({ params }) {
 
   if (!session) redirect("/signin");
   if (!lesson) notFound();
-
   const isOwner = session.user?.id === lesson.userId;
   const isAdmin = session.user?.role === "admin";
   if (!isOwner && !isAdmin) redirect("/unauthorized");
