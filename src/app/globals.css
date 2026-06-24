@@ -128,3 +128,10 @@
     @apply font-sans;
   }
 }
+body {
+  font-family: var(--font-inter);
+}
+
+.heading-font {
+  font-family: var(--font-playfair);
+}

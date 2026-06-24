@@ -128,7 +128,7 @@ export default function Navbar() {
           </nav>
 
           {/* Right Side */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5"> 
             {isPending ? (
               <div className="h-8 w-8 rounded-full bg-white/10 animate-pulse" />
             ) : user ? (

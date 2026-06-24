@@ -1,11 +1,18 @@
-import { Geist } from "next/font/google";
+import { Playfair_Display, Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/shared/Navbar";
 import { Toaster } from "sonner";
 import Footer from "@/components/shared/Footer";
 
+export const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+});
 
-const geist = Geist({ subsets: ["latin"] });
+export const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata = {
   title: "LifeVault — Share Your Life Lessons",
@@ -14,13 +21,15 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html 
-    className="dark"
-    lang="en" suppressHydrationWarning>
-      <body className={geist.className}>
+    <html
+      lang="en"
+      className={`${playfair.variable} ${inter.variable} dark`}
+      suppressHydrationWarning
+    >
+      <body className={inter.className}>
         <Navbar />
         <main>{children}</main>
-          <Footer />  
+        <Footer />
         <Toaster position="top-right" richColors />
       </body>
     </html>
