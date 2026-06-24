@@ -143,8 +143,8 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
         onChange(lessonId, field, newVal);
         toast.success(
           field === "visibility"
-            ? "Visibility updated"
-            : "Access level updated",
+            ? "Visibility updated ✅"
+            : "Access level updated ✅",
         );
       } else {
         toast.error(res.message || "Failed to update");
@@ -155,7 +155,6 @@ function QuickSelect({ lessonId, field, value, options, isPremium, onChange }) {
       setLoading(false);
     }
   };
-
   const current = options.find((o) => o.value === value);
 
   return (
