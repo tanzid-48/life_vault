@@ -18,8 +18,7 @@ export const metadata = {
   title: "LifeVault — Share Your Life Lessons",
   description: "Collect and share wisdom that matters.",
 };
-
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
   return (
     <html
       lang="en"
