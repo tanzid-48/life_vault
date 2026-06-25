@@ -25,8 +25,7 @@ export default async function RootLayout({ children }) {
   const session = await getSession();
  
 
-  // ✅ suspended check
-  if (session.user?.suspended === true) {
+ if (session?.user?.suspended === true) {
     redirect("/suspended");
   }
   return (

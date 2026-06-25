@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@better-auth/mongo-adapter": "^1.6.19",
+    "@react-pdf/renderer": "^4.5.1",
     "@stripe/stripe-js": "^9.8.0",
     "better-auth": "^1.6.19",
     "class-variance-authority": "^0.7.1",

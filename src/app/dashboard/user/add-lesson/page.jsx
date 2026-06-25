@@ -10,6 +10,7 @@ import {
   Lock,
   ArrowLeft,
   Clock,
+  ShieldX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,25 @@ export default function AddLessonPage() {
   });
 
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  if (user?.suspended) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-4">
+        <ShieldX className="w-12 h-12 text-red-400" />
+        <h2 className="text-xl font-bold text-white">Account Suspended</h2>
+        <p className="text-sm text-slate-400 max-w-sm">
+          You cannot create lessons while your account is suspended. Please
+          contact the administrator.
+        </p>
+        <Link
+          href="/suspended"
+          className="px-5 h-9 flex items-center rounded-xl text-xs font-bold text-white"
+          style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)" }}
+        >
+          Learn More
+        </Link>
+      </div>
+    );
+  }
 
   function validate() {
     const e = {};

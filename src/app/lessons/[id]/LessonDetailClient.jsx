@@ -28,6 +28,14 @@ import {
   toggleLike,
 } from "@/lib/action/lessonDetail";
 import LessonCard from "@/components/LessonCard";
+import dynamic from "next/dynamic";
+
+const ExportPDFButton = dynamic(() => import("@/components/LessonPDF"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-10 w-32 rounded-xl bg-white/5 animate-pulse" />
+  ),
+});
 
 // ── color configs
 const TONE_CONFIG = {
@@ -271,6 +279,9 @@ export default function LessonDetailClient({
     border: "rgba(107,114,128,0.2)",
   };
   const mins = readMins(lesson.description);
+  const isOwner =
+    currentUser?.id ===
+    (lesson.userId?.$oid || lesson.userId?.toString?.() || lesson.userId);
 
   // ── render
   return (
@@ -563,6 +574,9 @@ export default function LessonDetailClient({
           >
             <MessageCircle className="w-4 h-4" /> {comments.length}
           </div>
+          {(isOwner || currentUser?.isPremium) && !isLocked && (
+            <ExportPDFButton lesson={lesson} />
+          )}
 
           {/* Report — ml-auto */}
           <button
